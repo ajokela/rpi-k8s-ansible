@@ -1,74 +1,53 @@
 # rpi-k8s-ansible
 Raspberry PI's running Kubernetes deployed with Ansible
 
-Masters:
-- rPi 3b+ x1
+## Assumptions
 
-Workers:
-- rPi 3b+ x2
-- rPi 3b x4
+1.  there are 19 raspberry pi computers with name of
+    1.  ```rpi-cluster-master.local```
+    2.  ```rpi-cluster-[1:18].local```
+2.  your rpis are on their own network, with address space being 10.1.1.[100:118]
+3.  all rpis are using ```eth0``` for their connectivity.
+4.  you have installed ```ansible```
 
-CNI:
-- Weave (default)
-- Flannel
+# Verify Ansible and Host Connectivity
 
-# Preparing to install
-## Preparing an SD card on Linux
+From within the cloned repository folder, try the following command:
+
 ```
-# Write the image to the SD card, latest verified is 2021-05-07
-# Sourced the image from here: https://downloads.raspberrypi.org/raspios_arm64/images/raspios_arm64-2021-05-28/
+ansible -i cluster.yml all -m ping
+```
 
-# Linux
-$ sudo dd if=YYYY-MM-DD-raspios-buster-arm64-lite.img of=/dev/sdX bs=16M status=progress
-
-# Windows
-# I use balenaEtcher, Win32DiskImager is another option
-
-# Provision wifi settings on first boot
-$ cat bootstrap/wpa_supplicant.conf
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
-country=AU
-
-network={
-    ssid=""
-    psk=""
-    key_mgmt=WPA-PSK
+You should get output like the following:
+```
+rpi-cluster-3.local | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+rpi-cluster-1.local | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+rpi-cluster-2.local | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
 }
 
-$ cp bootstrap/wpa_supplicant.conf /mnt/boot/
+...
 
-# Enable SSH on first boot
-$ cp bootstrap/ssh /mnt/boot/ssh
-```
+rpi-cluster-16.local | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+rpi-cluster-17.local | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+rpi-cluster-18.local | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
 
-```
-Example flash and ssh/wifi:
-sudo umount /media/<user>/boot
-sudo umount /media/<user>/rootfs
-sudo dd if=2021-05-07-raspios-buster-arm64-lite.img of=/dev/<disk> bs=16M status=progress
-sync
-
-# Unplug/replug SD card
-
-cp bootstrap/wpa_supplicant.conf /media/<user>/boot/
-cp bootstrap/ssh /media/<user>/boot/
-
-sync
-sudo umount /media/<user>/boot
-sudo umount /media/<user>/rootfs
-```
-
-## Updating cluster.yml to match your environment
-This is where there individual rPi's are set to be a master or a slave.  
-I have not changed any passwords or configured SSH keys as this cannot be easily done with a headless rPi setup.  
-I am currently using DHCP static assignment to ensure each PI's MAC address is given the same IP address.  
-Update the file as required for your specific setup.
-
-# Install sshpass
-This is used as part of ansible connecting to the pi's over SSH with password auth
-```
-sudo apt-get install sshpass
 ```
 
 # Install Kubernetes
@@ -77,11 +56,6 @@ sudo apt-get install sshpass
 ansible-playbook -i cluster.yml playbooks/upgrade.yml
 ```
 
-## rPi Overclocks (optional)
-Ensure you update cluster.yml with the correct children mappings for each rpi model
-```
-ansible-playbook -i cluster.yml playbooks/overclock-rpis.yml
-```
 
 ## Install k8s
 With the below commands, you need to include the master node (node00) in all executions for the token to be set correctly.
@@ -89,15 +63,15 @@ With the below commands, you need to include the master node (node00) in all exe
 # Bootstrap the master and all slaves
 ansible-playbook -i cluster.yml site.yml
 
-# Bootstrap a single slave (node05)
-ansible-playbook -i cluster.yml site.yml -l node00,node05
+# Bootstrap a single slave (rpi-cluster-5)
+ansible-playbook -i cluster.yml site.yml -l rpi-cluster-master.local,rpi-cluster-5.local
 
 # When running again, feel free to ignore the common tag as this will reboot the rpi's
 ansible-playbook -i cluster.yml site.yml --skip-tags common
 ```
 
 ## Copy over the .kube/config
-This logs into node00 and copies the .kube/config file back into the local users ~/.kube/config file
+This logs into rpi-cluster-master and copies the .kube/config file back into the local users ~/.kube/config file
 Allowing a locally installed kubectl/etc to be able to query the cluster
 
 ```
@@ -200,3 +174,20 @@ kube_version: "1.15.1-00"
 ```
 ansible-playbook -i cluster.yml site.yml --tags upgrade,kubernetes
 ```
+
+----
+
+## Final Thoughts
+
+Setting the correct IP address of the master node on each slave node is incorrect. You will not have this problem if you are only are using one network adapter.  The way I have my cluster setup is to use the ethernet port for Power over Ethernet because the cluster is on its own wired network.  The master node acts as a *jump server*; eth0 is on the cluster's network while wlan0 is on the regular wifi network.  Using the tasks in this reposity, when setting up slave nodes, the address of wlan0 gets set on each slave instead of using the ```eth0``` address of the ```master``` node.
+
+Second item to discuss: even though there is a task to set ```cgroup memory``` parameters for the kernel on each node (including ```master```), for some reason, the change did not work on several nodes.  I was forced to manually log into failing nodes and verify or change the kernel boot parameters.
+
+## Acknowledgements
+
+* The entirety of this repository is based on Michael Robbins' [rpi-k8s-ansible](https://github.com/michael-robbins/rpi-k8s-ansible) repository.
+
+### Copyright
+Original: Copyright &copy; Michael Robbins 2017-2022
+Modifications: Copyright &copy; A.C. Jokela 2022 
+
