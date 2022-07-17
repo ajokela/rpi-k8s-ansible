@@ -1,5 +1,5 @@
 ---
-- hosts: node00
+- hosts: rpi-cluster-master.local
   tasks:
     - name: Create a local .kube directory
       file:
@@ -7,7 +7,7 @@
         state: directory
         mode: 0700
 
-    - name: Copy .kube/config from node00
+    - name: Copy .kube/config from rpi-cluster-master.local
       fetch:
         src: ~/.kube/config
         dest: ~/.kube/config

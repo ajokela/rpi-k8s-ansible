@@ -27,7 +27,7 @@
     - st.stat.exists
 
 - name: get the IP address of the node
-  shell: ifconfig wlan0 | grep 'inet ' | awk '{print $2}'
+  shell: ifconfig eth0 | grep 'inet ' | awk '{print $2}'
   register: ipaddress_out
 
 - name: set the node_ip
