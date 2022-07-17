@@ -3,12 +3,12 @@ Raspberry PI's running Kubernetes deployed with Ansible
 
 ## Assumptions
 
-1.  there are 19 raspberry pi computers with name of
+1.  there are 19 raspberry pi computers with names of
     1.  ```rpi-cluster-master.local```
     2.  ```rpi-cluster-[1:18].local```
 2.  your rpis are on their own network, with address space being 10.1.1.[100:118]
-3.  all rpis are using ```eth0``` for their connectivity.
-4.  you have installed ```ansible```
+3.  all rpis are using ```eth0``` for their connectivity on the ```cluster network```.
+4.  you have [installed ```ansible```](https://www.theurbanpenguin.com/installing-ansible-on-the-raspberry-pi/)
 
 # Verify Ansible and Host Connectivity
 
