@@ -98,7 +98,7 @@ ansible -i cluster.yml -a "mount -a" all
 ```
 
 # Upgrading your cluster
-First you need to upgrade the control plane (node00).
+First you need to upgrade the control plane (rpi-cluster-master).
 The below example is an upgrade from v1.15.0 -> v1.15.1
 
 ## Install the target kubeadm
