@@ -9,6 +9,7 @@ Raspberry PI's running Kubernetes deployed with Ansible
 2.  your rpis are on their own network, with address space being 10.1.1.[100:118]
 3.  all rpis are using ```eth0``` for their connectivity on the ```cluster network```.
 4.  you have [installed ```ansible```](https://www.theurbanpenguin.com/installing-ansible-on-the-raspberry-pi/)
+5.  The user `pi` on your master node has `sudo` privileges without PASSWD
 
 # Verify Ansible and Host Connectivity
 
